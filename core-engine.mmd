@@ -1,0 +1,85 @@
+flowchart TD
+    A[Input Text] --> B[Tokenizer/BPE Encoder]
+    B --> C[Token IDs]
+    
+    C --> D[Embedding Layer]
+    D --> D1[Token Embeddings]
+    D --> D2[Positional Embeddings]
+    D1 --> D3[Sum]
+    D2 --> D3
+    
+    D3 --> E[Transformer Stack N Layers]
+    
+    E --> F{Loop Through Layers}
+    F --> G[Layer i]
+    
+    G --> G1[Layer Norm 1]
+    G1 --> G2[Multi-Head Causal Attention]
+    G2 --> G3[Residual Add]
+    G3 --> G4[Layer Norm 2]
+    G4 --> G5[MLP/FFN]
+    G5 --> G6[Residual Add]
+    
+    G6 --> H{More Layers?}
+    H -->|Yes| F
+    H -->|No| I[Final Layer Norm]
+    
+    I --> J[LM Head/Unembedding]
+    J --> K[Logits Vocab Size]
+    
+    K --> L[Sampling Strategy]
+    
+    subgraph Sampling["Sampling & Generation Controls"]
+        L1[Temperature Scaling]
+        L2[Top-K Filtering]
+        L3[Top-P Nucleus]
+        L4[Repetition Penalty]
+        L5[Frequency/Presence Penalty]
+    end
+    
+    L --> L1
+    L1 --> L2
+    L2 --> L3
+    L3 --> L4
+    L4 --> L5
+    
+    L5 --> M[Softmax & Sample]
+    M --> N[Next Token ID]
+    
+    N --> O{Stopping Criteria}
+    
+    subgraph Stopping["Stop Conditions"]
+        O1[Max Tokens Reached]
+        O2[EOS Token Generated]
+        O3[Stop Sequence Found]
+        O4[Custom Stop Condition]
+    end
+    
+    O --> O1
+    O --> O2
+    O --> O3
+    O --> O4
+    
+    O -->|Continue| P[Append to Context]
+    P --> C
+    
+    O -->|Stop| Q[Detokenizer/BPE Decoder]
+    Q --> R[Output Text]
+    
+    subgraph KVCache["KV Cache Optimization"]
+        K1[Cache K/V Matrices]
+        K2[Reuse Past Keys/Values]
+        K3[Only Compute New Token]
+    end
+    
+    G2 -.->|Production Optimization| K1
+    K1 --> K2
+    K2 --> K3
+    
+    subgraph BatchProcessing["Batching Optional"]
+        BP1[Batch Multiple Sequences]
+        BP2[Padding/Attention Masks]
+        BP3[Dynamic Batching]
+    end
+    
+    C -.->|Production Feature| BP1
