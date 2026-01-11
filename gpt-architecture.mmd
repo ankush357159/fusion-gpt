@@ -1,0 +1,311 @@
+flowchart TD
+    subgraph Frontend["Frontend Layer - Next.js"]
+        A[User Browser] --> B[Next.js App Router]
+        B --> C[React Components]
+        C --> D[TanStack Query/SWR]
+        D --> E[WebSocket Client]
+        D --> F[REST API Client]
+        
+        G[Auth: NextAuth.js] --> B
+        H[Rate Limiting: Client Side] --> D
+        I[Input Validation] --> D
+        J[Error Boundaries] --> C
+        
+        K[Streaming UI] --> C
+        L[Chat History Storage] --> C
+    end
+    
+    subgraph EdgeLayer["Edge Layer - Security & Load Balancing"]
+        M[Cloudflare/AWS CloudFront]
+        N[WAF Web Application Firewall]
+        O[DDoS Protection]
+        P[SSL/TLS Termination]
+        Q[Geographic Load Balancer]
+    end
+    
+    subgraph APIGateway["API Gateway Layer"]
+        R[NGINX/Kong Gateway]
+        S[Rate Limiter: Redis backed]
+        T[Request Authentication JWT]
+        U[Request Logger]
+        V[Circuit Breaker]
+        W[API Versioning /v1/chat]
+    end
+    
+    subgraph Backend["Backend - FastAPI"]
+        X[FastAPI Application]
+        Y[WebSocket Handler]
+        Z[REST Endpoints]
+        
+        AA[Middleware Stack]
+        AB[CORS Handler]
+        AC[Auth Middleware JWT Verify]
+        AD[Request ID Injector]
+        AE[Request Validator Pydantic]
+        AF[Error Handler]
+        
+        AG[Business Logic]
+        AH[Prompt Engineering Layer]
+        AI[Chat Formatter Templates]
+        AJ[Context Window Manager]
+        AK[Conversation History]
+        AL[Token Counter]
+    end
+    
+    subgraph ModelLayer["Model Inference Layer"]
+        AM[Model Server: vLLM/TGI]
+        AN[Model Selection Router]
+        
+        AO[Quantized Models]
+        AP[Model 1: Llama-3.1-8B-4bit]
+        AQ[Model 2: Mistral-7B-8bit]
+        AR[Model 3: Qwen-14B-GPTQ]
+        
+        AS[Inference Optimization]
+        AT[Continuous Batching]
+        AU[KV Cache Management]
+        AV[PagedAttention vLLM]
+        AW[FlashAttention-2]
+        AX[Speculative Decoding]
+        
+        AY[GPU Memory Pool]
+        AZ[Multi-GPU Tensor Parallel]
+    end
+    
+    subgraph Quantization["Model Optimization Pipeline"]
+        BA[Base Model Selection]
+        BB[Quantization Method]
+        BC[GPTQ 4-bit]
+        BD[AWQ 4-bit]
+        BE[GGUF Q4_K_M]
+        BF[bitsandbytes INT8/4bit]
+        
+        BG[Validation Benchmarks]
+        BH[Perplexity Check]
+        BI[Quality Metrics]
+        BJ[Memory Footprint Test]
+    end
+    
+    subgraph DataLayer["Data & Cache Layer"]
+        BK[PostgreSQL]
+        BL[User Management]
+        BM[Conversation History]
+        BN[Usage Analytics]
+        
+        BO[Redis Cluster]
+        BP[Session Cache]
+        BQ[Rate Limit Counters]
+        BR[Request Deduplication]
+        BS[Model Output Cache]
+        
+        BT[S3/Object Storage]
+        BU[Model Weights]
+        BV[Conversation Backups]
+        BW[Audit Logs]
+    end
+    
+    subgraph QueueSystem["Message Queue & Task Processing"]
+        BX[RabbitMQ/Kafka]
+        BY[Async Inference Queue]
+        BZ[Priority Queues]
+        CA[Dead Letter Queue]
+        
+        CB[Celery Workers]
+        CC[Batch Processing]
+        CD[Model Warm-up Tasks]
+        CE[Cleanup Jobs]
+    end
+    
+    subgraph Monitoring["Observability & Monitoring"]
+        CF[Prometheus Metrics]
+        CG[Request Latency p50/p95/p99]
+        CH[GPU Utilization]
+        CI[Token Throughput]
+        CJ[Queue Depth]
+        CK[Error Rates]
+        
+        CL[Grafana Dashboards]
+        CM[Real-time Metrics]
+        CN[Alerting Rules]
+        
+        CO[Logging Stack]
+        CP[Structured JSON Logs]
+        CQ[ELK/Loki Stack]
+        CR[Distributed Tracing Jaeger]
+        CS[Request Correlation IDs]
+        
+        CT[Error Tracking]
+        CU[Sentry/Rollbar]
+        CV[Exception Aggregation]
+        CW[User Impact Analysis]
+    end
+    
+    subgraph Security["Security Layer"]
+        CX[Auth & Identity]
+        CY[OAuth2/OIDC]
+        CZ[JWT Token Management]
+        DA[Refresh Token Rotation]
+        DB[RBAC Role-Based Access]
+        
+        DC[Input Sanitization]
+        DD[Prompt Injection Detection]
+        DE[Content Filtering]
+        DF[PII Detection & Masking]
+        DG[Output Validation]
+        
+        DH[Secrets Management]
+        DI[HashiCorp Vault/AWS Secrets]
+        DJ[API Key Rotation]
+        DK[Environment Variables]
+    end
+    
+    subgraph Deployment["Cloud Deployment - GPU Infrastructure"]
+        DL[Container Orchestration]
+        DM[Kubernetes Cluster]
+        DN[Auto-scaling HPA/VPA]
+        DO[GPU Node Pools]
+        
+        DP[Cloud Providers]
+        DQ[AWS: p4d/p5 instances]
+        DR[GCP: A100/H100 instances]
+        DS[Azure: NCv4/NDv5 VMs]
+        DT[Lambda Labs/RunPod]
+        
+        DU[CI/CD Pipeline]
+        DV[GitHub Actions]
+        DW[Docker Build & Push]
+        DX[Helm Chart Deployment]
+        DY[Blue-Green Deployment]
+        DZ[Canary Releases]
+        
+        EA[Infrastructure as Code]
+        EB[Terraform/Pulumi]
+        EC[Config Management]
+    end
+    
+    subgraph Optimization["Performance Optimization"]
+        ED[Model Serving Optimization]
+        EE[Request Batching]
+        EF[Response Streaming]
+        EG[Prefix Caching]
+        EH[Model Compilation TensorRT]
+        
+        EI[Cost Optimization]
+        EJ[Spot Instances]
+        EK[Auto-scaling Policies]
+        EL[Request Routing]
+        EM[Cold Start Reduction]
+    end
+    
+    %% Flow Connections
+    A --> M
+    M --> N --> O --> P --> Q
+    Q --> R
+    R --> S --> T --> U --> V --> W
+    W --> X
+    
+    X --> AA
+    AA --> AB --> AC --> AD --> AE --> AF
+    X --> Y --> AG
+    X --> Z --> AG
+    
+    AG --> AH --> AI --> AJ
+    AG --> AK --> AL
+    
+    AG --> AM
+    AM --> AN
+    AN --> AO
+    AO --> AP
+    AO --> AQ
+    AO --> AR
+    
+    AM --> AS
+    AS --> AT --> AU --> AV --> AW --> AX
+    AS --> AY --> AZ
+    
+    BA --> BB
+    BB --> BC
+    BB --> BD
+    BB --> BE
+    BB --> BF
+    BB --> BG
+    BG --> BH --> BI --> BJ
+    
+    AG --> BK
+    BK --> BL
+    BK --> BM
+    BK --> BN
+    
+    AG --> BO
+    BO --> BP
+    BO --> BQ
+    BO --> BR
+    BO --> BS
+    
+    BT --> BU
+    BT --> BV
+    BT --> BW
+    
+    AG --> BX
+    BX --> BY --> BZ --> CA
+    BX --> CB
+    CB --> CC --> CD --> CE
+    
+    X --> CF
+    CF --> CG
+    CF --> CH
+    CF --> CI
+    CF --> CJ
+    CF --> CK
+    CF --> CL
+    CL --> CM --> CN
+    
+    X --> CO
+    CO --> CP --> CQ
+    CO --> CR --> CS
+    
+    X --> CT
+    CT --> CU --> CV --> CW
+    
+    AC --> CX
+    CX --> CY --> CZ --> DA --> DB
+    
+    AE --> DC
+    DC --> DD --> DE --> DF --> DG
+    
+    DI --> DH
+    DH --> DJ --> DK
+    
+    AM --> DL
+    DL --> DM --> DN --> DO
+    
+    DO --> DP
+    DP --> DQ
+    DP --> DR
+    DP --> DS
+    DP --> DT
+    
+    DM --> DU
+    DU --> DV --> DW --> DX --> DY --> DZ
+    
+    DM --> EA
+    EA --> EB --> EC
+    
+    AM --> ED
+    ED --> EE --> EF --> EG --> EH
+    
+    DM --> EI
+    EI --> EJ --> EK --> EL --> EM
+    
+    style Frontend fill:#e3f2fd
+    style EdgeLayer fill:#f3e5f5
+    style APIGateway fill:#fff3e0
+    style Backend fill:#e8f5e9
+    style ModelLayer fill:#fce4ec
+    style Quantization fill:#fff9c4
+    style DataLayer fill:#e0f2f1
+    style QueueSystem fill:#ffeaa7
+    style Monitoring fill:#dfe6e9
+    style Security fill:#ffebee
+    style Deployment fill:#e8eaf6
+    style Optimization fill:#f1f8e9
