@@ -4,7 +4,7 @@
 
 The diagram represents a **AI chat system architecture** built around a **Next.js frontend**, a **FastAPI backend**, and a **GPU-based model inference stack**. It emphasizes **security, scalability, observability, performance optimization, and cost efficiency** across the entire request lifecycle—from user interaction to model response.
 
-## 1. Frontend Layer (Next.js)
+### 1. Frontend Layer (Next.js)
 
 This layer handles all user-facing interactions.
 
@@ -28,7 +28,7 @@ This layer handles all user-facing interactions.
 
 **Goal:** Provide a responsive, secure, and real-time chat experience.
 
-## 2. Edge Layer (Security & Load Balancing)
+### 2. Edge Layer (Security & Load Balancing)
 
 This layer protects and distributes traffic before it reaches backend systems.
 
@@ -43,7 +43,7 @@ This layer protects and distributes traffic before it reaches backend systems.
 **Goal:**
 Block malicious traffic, encrypt connections, and route users to the nearest healthy region.
 
-## 3. API Gateway Layer
+### 3. API Gateway Layer
 
 Acts as the main traffic control point for backend services.
 
@@ -58,7 +58,7 @@ Acts as the main traffic control point for backend services.
 **Goal:**
 Secure, observe, and control API access.
 
-## 4. Backend Layer (FastAPI)
+### 4. Backend Layer (FastAPI)
 
 This is the core application logic layer.
 
@@ -88,7 +88,7 @@ This is the core application logic layer.
 **Goal:**
 Transform user requests into optimized prompts and manage conversation state.
 
-## 5. Model Inference Layer
+### 5. Model Inference Layer
 
 Responsible for running LLMs efficiently on GPUs.
 
@@ -119,7 +119,7 @@ Responsible for running LLMs efficiently on GPUs.
 **Goal:**
 Deliver fast, cost-efficient, high-throughput inference.
 
-## 6. Quantization & Model Optimization Pipeline
+### 6. Quantization & Model Optimization Pipeline
 
 Optimizes base models for lower memory usage and faster inference.
 
@@ -139,7 +139,7 @@ Optimizes base models for lower memory usage and faster inference.
 **Goal:**
 Balance performance, quality, and GPU cost.
 
-## 7. Data & Cache Layer
+### 7. Data & Cache Layer
 
 Handles persistence, caching, and storage.
 
@@ -167,7 +167,7 @@ Handles persistence, caching, and storage.
 **Goal:**
 Ensure fast access, durability, and scalability.
 
-## 8. Message Queue & Task Processing
+### 8. Message Queue & Task Processing
 
 Manages asynchronous workloads.
 
@@ -188,7 +188,7 @@ Manages asynchronous workloads.
 **Goal:**
 Offload heavy tasks and improve system resilience.
 
-## 9. Observability & Monitoring
+### 9. Observability & Monitoring
 
 Provides full system visibility.
 
@@ -220,7 +220,7 @@ Provides full system visibility.
 **Goal:**
 Detect issues early and maintain reliability.
 
-## 10. Security Layer
+### 10. Security Layer
 
 Protects users, data, and infrastructure.
 
@@ -247,7 +247,7 @@ Protects users, data, and infrastructure.
 **Goal:**
 Prevent abuse, data leaks, and prompt attacks.
 
-## 11. Deployment & Cloud Infrastructure
+### 11. Deployment & Cloud Infrastructure
 
 Runs the system at scale.
 
@@ -280,7 +280,7 @@ Runs the system at scale.
 **Goal:**
 Enable reliable, scalable, and automated deployments.
 
-## 12. Performance & Cost Optimization
+### 12. Performance & Cost Optimization
 
 Improves efficiency and reduces expenses.
 
