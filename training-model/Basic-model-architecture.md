@@ -1,8 +1,8 @@
-# Training a Mini Language Model from Scratch
+## Training a Mini Language Model from Scratch
 
 Model to learn data from books.
 
-## Pipeline Architecture
+### Pipeline Architecture
 
 ```
 Books → Cleaning → Tokenization (tiktoken) → Dataset Creation → 
@@ -20,7 +20,7 @@ Inference → Deployment
 8. **Inference** – Generate text by predicting tokens autoregressively from prompts.
 9. **Deployment** – Expose the model via API or application interface.
 
-## Key Steps & Details
+### Key Steps & Details
 
 **1. Tokenization (Using tiktoken + GPT-2 Vocabulary)**
 - Use `tiktoken` library with GPT-2 vocabulary: `tiktoken.get_encoding("gpt2")`
@@ -61,7 +61,7 @@ Key hyperparameters to define:
 - Learning rate schedule: Cosine decay with warmup
 ```
 
-## Realistic Expectations for a Mini Model
+### Realistic Expectations for a Mini Model
 
 **Pros:**
 - Deep understanding of transformer internals and training dynamics
@@ -77,7 +77,7 @@ Key hyperparameters to define:
 - May struggle with rare words or specialized domains
 - Requires significant compute time (days of training)
 
-## Recommended Tech Stack
+### Recommended Tech Stack
 
 - **Framework**: PyTorch
 - **Tokenization**: tiktoken library (`get_encoding("gpt2")`)
@@ -86,7 +86,7 @@ Key hyperparameters to define:
 - **Books needed**: 20-50 books minimum, ideally 100+ for better results
 - **Data volume**: Target 10-50GB of cleaned text
 
-## Suggested Mini Model Specs for Learning
+### Suggested Mini Model Specs for Learning
 
 ```
 Option 1: Ultra-Mini (Fast Training)
@@ -116,7 +116,7 @@ Option 2: Mini-GPT-2 (Better Quality)
 - GPU memory needed: 12-16GB
 ```
 
-## Additional Recommendations
+### Additional Recommendations
 
 **For GPT-2 Vocabulary (50,257 tokens):**
 - Smaller vocab = fewer embedding parameters = more compute for transformer layers
