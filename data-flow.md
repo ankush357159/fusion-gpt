@@ -6,7 +6,7 @@ This document outlines the end-to-end lifecycle of a single user prompt, from th
 
 * **Input:** User types *"Explain quantum computing"* and submits.
 
-## 2. Frontend Layer (Next.js)
+### 2. Frontend Layer (Next.js)
 
 * **Validation:** Locally validates input length and content type.
 * **Rate Limiting:** Checks client-side cache to prevent rapid-fire submissions.
