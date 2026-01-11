@@ -26,7 +26,7 @@
       ↓
    LayerNorm ①
       ↓
-   Multi-Head **Causal** Self-Attention
+   Multi-Head Causal Self-Attention
       ↓
    Residual connection (+ input)
       ↓
