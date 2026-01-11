@@ -4,99 +4,179 @@
 
 ### High-Level Flow – `Text → Next Token → Repeat`
 
-1. **Input Text**  
-   → Raw string gets passed to the tokenizer
+### 1. Input Text
 
-2. **Tokenizer / BPE Encoder**  
-   → Converts text into sequence of **Token IDs** (integers)  
-   Most common nowadays: Byte-Pair Encoding (BPE), SentencePiece, WordPiece, tiktoken, etc.
+Raw user text enters the system as a plain string.
 
-3. **Embedding Layer**  
-   Two kinds of embeddings are added together:
-   - **Token Embeddings** – learned vector for each vocabulary item
-   - **Positional Embeddings** – information about token position  
-     (learned, RoPE, ALiBi, relative positional bias, etc.)
+### 2. Tokenizer / BPE Encoder
 
-   → Result: **hidden states** (usually shape `[batch, sequence_length, hidden_dim]`)
+The text is converted into a sequence of **Token IDs** (integers).
 
-4. **Transformer Stack** (N × identical decoder layers)
+Common tokenization methods:
 
-   Each layer consists of (in the most common order):
+* Byte Pair Encoding (BPE)
+* SentencePiece
+* WordPiece
+* tiktoken
 
-   ```
-   Input to layer
-      ↓
-   LayerNorm ①
-      ↓
-   Multi-Head Causal Self-Attention
-      ↓
-   Residual connection (+ input)
-      ↓
-   LayerNorm ②
-      ↓
-   MLP / Feed-Forward Network   (usually SwiGLU, GeGLU or Gated Linear + small amount of experts in MoE models)
-      ↓
-   Residual connection (+ attention output)
-      ↓
-   Output of this layer → input to next layer
-   ```
+**Output:**
+`[token_1, token_2, ..., token_n]`
 
-5. **After all N layers**  
-   → Final **Layer Normalization** (very important in modern architectures)
+### 3. Token Embedding Layer
 
-6. **LM Head / Unembedding**  
-   - Linear layer: hidden_dim → vocab_size  
-   - Usually **tied** with input embedding matrix (weight sharing)  
-   → Produces **logits** [batch, seq_len, vocab_size]
+Each token ID is mapped to a dense vector.
 
-7. **Sampling & Generation Controls** (during inference)
+Unlike older GPT-style models with learned positional embeddings, modern architectures use **RoPE (Rotary Positional Embeddings)** inside attention layers instead of explicit positional embedding vectors.
 
-   Typical chain of operations (order can slightly vary):
+**Output:**
+Hidden states with shape:
+`[batch, sequence_length, hidden_dim]`
 
-   ```
-   raw logits
-      ↓
-   Temperature scaling          (1.0 = default, >1 more random, <1 more deterministic)
-      ↓
-   Optional: Top-K filtering
-      ↓
-   Optional: Top-P (nucleus) sampling
-      ↓
-   Optional: Repetition penalty
-      ↓
-   Optional: Frequency / Presence penalty
-      ↓
-   Softmax → probabilities
-      ↓
-   Sample next token (multinomial / greedy / beam / etc.)
-   ```
+### 4. Transformer Stack (N Decoder Layers)
 
-8. **Stopping Criteria** (any of these usually stop generation)
+Each layer follows this structure:
 
-   - Reached **max_new_tokens** / max context length
-   - Generated **EOS** token (most important in practice)
-   - Found one of the **stop sequences** (programmed stop strings)
-   - Custom logic (safety filter, length ratio, etc.)
+```
+Input
+  ↓
+RMSNorm / LayerNorm ①
+  ↓
+Grouped-Query Attention (GQA)
+  ↓
+Residual Connection ①
+  ↓
+RMSNorm / LayerNorm ②
+  ↓
+SwiGLU / GELU Feed-Forward Network
+  ↓
+Residual Connection ②
+  ↓
+Output → Next Layer
+```
 
-9. **Important Optimizations**
+### 5. Grouped-Query Attention (GQA) – Internal Flow
 
-   | Optimization          | What it does                                                                 | Huge impact on |
-   |-----------------------|------------------------------------------------------------------------------|----------------|
-   | **KV Cache**          | Stores previous Key/Value matrices → only compute new token's Q/K/V         | Speed ×5–40×   |
-   | **Causal masking**    | Attention can only look left (past tokens)                                   | Autoregressive property |
-   | **Batching**          | Process multiple requests at once + padding + attention mask                | Throughput     |
-   | **Dynamic batching**  | Continuously add new requests to running batch, evict finished ones         | Real-time serving |
-   | **PagedAttention**    | (not shown but very common now) virtual memory style KV cache management    | Memory efficiency |
+Inside each attention block:
 
-### Summary
+```
+Hidden States
+  ↓
+Project to Q, K, V
+  ↓
+Apply RoPE to Q & K
+  ↓
+Compute Attention Scores (causal masked)
+  ↓
+KV Cache (reuse past K/V for speed)
+  ↓
+Weighted Sum of Values
+  ↓
+Attention Output
+```
+
+**Key properties:**
+
+* **RoPE** injects positional information
+* **Causal masking** ensures autoregressive behavior
+* **KV Cache** avoids recomputing past tokens
+* **GQA** reduces memory vs full MHA
+
+### 6. Final Normalization
+
+After all N layers:
+
+```
+Final RMSNorm / LayerNorm
+```
+
+Stabilizes output before projection to vocabulary space.
+
+### 7. LM Head / Unembedding
+
+A linear projection maps hidden states to vocabulary size:
+
+```
+hidden_dim → vocab_size
+```
+
+Usually **weight-tied** with the input embedding matrix.
+
+**Output:**
+Logits with shape:
+`[batch, seq_len, vocab_size]`
+
+### 8. Sampling Pipeline (Inference-Time Controls)
+
+The logits pass through configurable sampling steps:
+
+```
+Raw logits
+  ↓
+Temperature Scaling
+  ↓
+Top-K Filtering (optional)
+  ↓
+Top-P / Nucleus Sampling (optional)
+  ↓
+Repetition Penalty (optional)
+  ↓
+Frequency / Presence Penalty (optional)
+  ↓
+Softmax → Probabilities
+  ↓
+Sample Next Token
+```
+
+Each step controls randomness, diversity, and repetition.
+
+### 9. Stopping Criteria
+
+Generation stops when any condition is met:
+
+* Maximum token limit reached
+* EOS (End-of-Sequence) token generated
+* Stop sequence detected
+* Custom termination logic
+
+If none are met:
+
+```
+Append token → Re-tokenize → Continue loop
+```
+
+### 10. Detokenizer / BPE Decoder
+
+Final token IDs are converted back into readable text.
+
+## Important Optimizations
+
+| Optimization         | Purpose                        | Impact                 |
+| -------------------- | ------------------------------ | ---------------------- |
+| **KV Cache**         | Reuses past K/V tensors        | 5–40× faster inference |
+| **Causal Masking**   | Prevents future token access   | Enables autoregression |
+| **GQA**              | Fewer key/value heads          | Lower memory           |
+| **RoPE**             | Position encoding in attention | Better long-context    |
+| **Dynamic Batching** | Merges live requests           | Higher throughput      |
+| **PagedAttention**   | Virtual memory for KV cache    | Memory efficiency      |
+
+## Summary
 
 ```
 Text
 → Tokenization
-→ Embed + PosEnc
-→ ×N [LN → Causal MHA → residual → LN → MLP → residual]
-→ Final LN
-→ LM head → logits
-→ (temperature → top-k/p → repetition/freq penalty) → sample
-→ append & repeat   or   stop + decode → output text
+→ Token Embeddings
+→ ×N [
+     RMSNorm
+     → GQA (RoPE + KV Cache)
+     → Residual
+     → RMSNorm
+     → SwiGLU FFN
+     → Residual
+   ]
+→ Final RMSNorm
+→ LM Head → logits
+→ (temperature → top-k/p → penalties)
+→ sample next token
+→ append & repeat
+→ stop → detokenize → output text
 ```
