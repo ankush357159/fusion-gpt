@@ -1,6 +1,6 @@
 ## ChatGPT Core Engine Architecture
 
-![Core Engine Architecture](core-engine.mmd)
+[Core Engine Architecture](core-engine.mmd)
 
 ### High-Level Flow – `Text → Next Token → Repeat`
 
