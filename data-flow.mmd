@@ -1,0 +1,159 @@
+flowchart TD
+    subgraph BasicREST["BASIC REST FLOW (Your Version - Not Production Ready)"]
+        A1[User types message] --> A2[React sends POST request]
+        A2 --> A3[FastAPI validates request]
+        A3 --> A4[Prompt constructed]
+        A4 --> A5[LLM generates FULL response]
+        A5 --> A6[FastAPI returns complete text]
+        A6 --> A7[React displays reply]
+        
+        A8[Problem: User waits 10-60s<br/>No progress indication<br/>Poor UX]
+        style A8 fill:#ffcccc
+    end
+    
+    subgraph ProductionREST["PRODUCTION REST FLOW (With SSE Streaming)"]
+        B1[User types message in chat input] --> B2[React validates input locally]
+        B2 --> B3[Check rate limit cache]
+        B3 --> B4{Rate limit<br/>exceeded?}
+        B4 -->|Yes| B5[Show error toast]
+        B4 -->|No| B6[Add message to UI optimistically]
+        
+        B6 --> B7[POST to /v1/chat/completions<br/>with EventSource SSE]
+        B7 --> B8[API Gateway: NGINX/Kong]
+        B8 --> B9[Check JWT token validity]
+        B9 --> B10{Valid<br/>token?}
+        B10 -->|No| B11[Return 401 Unauthorized]
+        B10 -->|Yes| B12[Redis: Check rate limit]
+        
+        B12 --> B13{Within<br/>limits?}
+        B13 -->|No| B14[Return 429 Too Many Requests]
+        B13 -->|Yes| B15[Log request to ELK/Loki]
+        
+        B15 --> B16[FastAPI: Input validation Pydantic]
+        B16 --> B17{Valid<br/>input?}
+        B17 -->|No| B18[Return 400 Bad Request]
+        B17 -->|Yes| B19[Security checks]
+        
+        B19 --> B20[Prompt injection detection]
+        B20 --> B21{Injection<br/>detected?}
+        B21 -->|Yes| B22[Return 400 Malicious Input]
+        B21 -->|No| B23[PII detection/masking]
+        
+        B23 --> B24[Check response cache Redis]
+        B24 --> B25{Cache<br/>hit?}
+        B25 -->|Yes| B26[Return cached response]
+        B25 -->|No| B27[Apply chat template]
+        
+        B27 --> B28[Llama 3.1 format:<br/>system + user + assistant]
+        B28 --> B29[Add to inference queue]
+        B29 --> B30[Batch processor collects requests]
+        
+        B30 --> B31[vLLM: Continuous batching]
+        B31 --> B32[Load from KV cache if prefix exists]
+        B32 --> B33[Generate tokens auto-regressively]
+        
+        B33 --> B34{Stream<br/>each token}
+        B34 --> B35[FastAPI: Send SSE chunk]
+        B35 --> B36[React: Append to message]
+        B36 --> B37[Re-render UI incrementally]
+        B37 --> B34
+        
+        B34 -->|Done| B38[Send finish event]
+        B38 --> B39[Store in conversation DB]
+        B39 --> B40[Update cache]
+        B40 --> B41[Log metrics to Prometheus]
+        B41 --> B42[React: Mark message complete]
+        
+        style B19 fill:#fff3cd
+        style B33 fill:#d1ecf1
+        style B36 fill:#d4edda
+    end
+    
+    subgraph ProductionWebSocket["PRODUCTION WEBSOCKET FLOW (Real-time Bidirectional)"]
+        C1[User opens chat page] --> C2[React: Establish WebSocket connection]
+        C2 --> C3[Send JWT token in connection]
+        C3 --> C4[FastAPI: Validate WebSocket upgrade]
+        C4 --> C5[Accept connection]
+        C5 --> C6[Keep connection alive]
+        
+        C7[User types message] --> C8[React: Validate input]
+        C8 --> C9[Send JSON over WebSocket]
+        C9 --> C10[FastAPI: Receive message]
+        
+        C10 --> C11[Check user rate limit in Redis]
+        C11 --> C12{Within<br/>limits?}
+        C12 -->|No| C13[Send error over WS]
+        C12 -->|Yes| C14[Security validation]
+        
+        C14 --> C15[Prompt injection check]
+        C15 --> C16{Safe?}
+        C16 -->|No| C17[Send error over WS]
+        C16 -->|Yes| C18[Apply chat template]
+        
+        C18 --> C19[Submit to vLLM inference]
+        C19 --> C20[Stream generation]
+        
+        C20 --> C21{For each<br/>token}
+        C21 --> C22[Send token chunk over WS]
+        C22 --> C23[React: Update UI in real-time]
+        C23 --> C24[User sees text appearing]
+        C24 --> C21
+        
+        C21 -->|Done| C25[Send completion message]
+        C25 --> C26[Save to database async]
+        C26 --> C27[Update metrics]
+        C27 --> C28[Ready for next message]
+        
+        C29[Connection drops] --> C30[React: Auto-reconnect]
+        C30 --> C31[Restore conversation state]
+        
+        style C20 fill:#d1ecf1
+        style C23 fill:#d4edda
+        style C30 fill:#fff3cd
+    end
+    
+    subgraph ComparisonTable["Comparison: REST SSE vs WebSocket"]
+        D1["REST with SSE:<br/>Simple to implement<br/>✅ Better firewall compatibility<br/>✅ Auto-reconnect built-in<br/>❌ One-way streaming only<br/>❌ New connection per request"]
+        
+        D2["WebSocket:<br/>✅ True bidirectional<br/>✅ Lower latency<br/>✅ Single persistent connection<br/>✅ Can cancel mid-generation<br/>❌ More complex to implement<br/>❌ Firewall issues possible"]
+        
+        style D1 fill:#e7f3ff
+        style D2 fill:#fff9e6
+    end
+    
+    subgraph ErrorHandling["Error Handling Flow"]
+        E1[Error occurs anywhere] --> E2{Error type?}
+        E2 -->|Validation| E3[400 Bad Request]
+        E2 -->|Auth| E4[401 Unauthorized]
+        E2 -->|Rate Limit| E5[429 Too Many Requests]
+        E2 -->|Server| E6[500 Internal Error]
+        
+        E3 --> E7[Log to Sentry]
+        E4 --> E7
+        E5 --> E7
+        E6 --> E7
+        
+        E7 --> E8[Return structured error]
+        E8 --> E9[React: Display user-friendly message]
+        E9 --> E10[Offer retry option]
+        
+        style E6 fill:#ffcccc
+        style E9 fill:#fff3cd
+    end
+    
+    subgraph MetricsFlow["Metrics & Monitoring Flow (Parallel)"]
+        F1[Every request] --> F2[Prometheus: Increment counter]
+        F2 --> F3[Record latency histogram]
+        F3 --> F4[Update GPU metrics]
+        F4 --> F5[Update active requests gauge]
+        
+        F6[Grafana polls Prometheus] --> F7[Display real-time dashboards]
+        F7 --> F8[Trigger alerts if thresholds exceeded]
+        
+        F9[Structured logs] --> F10[Ship to ELK/Loki]
+        F10 --> F11[Indexed for search]
+        F11 --> F12[Available for debugging]
+        
+        style F2 fill:#e7f3ff
+        style F8 fill:#ffcccc
+    end
