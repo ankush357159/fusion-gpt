@@ -301,7 +301,7 @@ Improves efficiency and reduces expenses.
 **Goal:**
 Maximize performance per dollar.
 
-## End-to-End Request Flow Summary
+### End-to-End Request Flow Summary
 
 1. A user sends a request from the browser.
 2. Traffic passes through CDN, WAF, and DDoS protection.
