@@ -1,5 +1,7 @@
 ## LLM Application Data Flow
 
+[Data Flow](data-flow.mmd)
+
 This document outlines the end-to-end lifecycle of a single user prompt, from the initial keystroke to the final rendered response.
 
 ### 1. User Interaction
