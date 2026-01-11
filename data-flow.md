@@ -1,78 +1,101 @@
-[Data Flow](data-flow.mmd)
-User types "Explain quantum computing"
-    ↓
-[FRONTEND - Next.js]
-├── Validate input locally (length, content)
-├── Check client-side rate limit cache
-├── Add message to UI optimistically (instant feedback)
-└── Open SSE connection to /v1/chat/completions
-    ↓
-[EDGE LAYER - CDN/WAF]
-├── SSL termination
-├── DDoS protection
-└── Route to nearest server
-    ↓
-[API GATEWAY - NGINX/Kong]
-├── Verify JWT token (decode + check expiration)
-├── Check Redis rate limit (100 req/hour per user)
-├── Log request with correlation ID
-└── Forward to backend
-    ↓
-[BACKEND - FastAPI]
-├── Validate request schema (Pydantic)
-├── Security checks:
-│   ├── Prompt injection detection
-│   ├── PII detection/masking
-│   └── Content filtering
-├── Check Redis cache (SHA256 of prompt + params)
-│   └── If cache hit → return cached response
-└── If cache miss → continue
-    ↓
-[PROMPT ENGINEERING]
-├── Apply chat template (Llama 3.1 format):
-│   <|start_header_id|>system<|end_header_id|>
-│   You are a helpful assistant.
-│   <|start_header_id|>user<|end_header_id|>
-│   Explain quantum computing
-│   <|start_header_id|>assistant<|end_header_id|>
-└── Add conversation history if multi-turn
-    ↓
-[INFERENCE QUEUE]
-├── Add to batch queue (wait max 50ms)
-├── Collect up to 8 requests
-└── Submit batch to vLLM
-    ↓
-[MODEL - vLLM Engine]
-├── Check KV cache for common prefix
-├── Load quantized weights (4-bit GPTQ)
-├── Generate tokens auto-regressively:
-│   Token 1: "Quantum" → stream
-│   Token 2: "computing" → stream
-│   Token 3: "uses" → stream
-│   ... (continues for ~200-500 tokens)
-└── Each token takes ~20-50ms
-    ↓
-[STREAMING BACK]
-├── FastAPI sends SSE event: data: {"text": "Quantum", "done": false}
-├── FastAPI sends SSE event: data: {"text": " computing", "done": false}
-├── FastAPI sends SSE event: data: {"text": " uses", "done": false}
-└── ... continues until completion
-    ↓
-[FRONTEND UPDATES]
-├── Receive each SSE chunk
-├── Append to message.content
-├── Re-render component (React shows growing text)
-└── User sees text appearing word-by-word (ChatGPT-style)
-    ↓
-[COMPLETION]
-├── Send final SSE: data: {"text": "", "done": true, "tokens": 247}
-├── Save conversation to PostgreSQL (async)
-├── Cache response in Redis (TTL: 1 hour)
-├── Update Prometheus metrics:
-│   ├── request_count++
-│   ├── tokens_generated += 247
-│   └── request_latency.observe(2.3s)
-└── Close SSE connection
-    ↓
-[USER SEES]
-Complete response displayed with smooth streaming effect
+## LLM Application Data Flow
+
+This document outlines the end-to-end lifecycle of a single user prompt, from the initial keystroke to the final rendered response.
+
+### 1. User Interaction
+
+* **Input:** User types *"Explain quantum computing"* and submits.
+
+## 2. Frontend Layer (Next.js)
+
+* **Validation:** Locally validates input length and content type.
+* **Rate Limiting:** Checks client-side cache to prevent rapid-fire submissions.
+* **Optimistic UI:** Immediately adds the user's message to the UI to provide instant feedback.
+* **Connection:** Opens a **Server-Sent Events (SSE)** connection to `/v1/chat/completions`.
+
+### 3. Edge & Gateway Layer
+
+* **Edge (Cloudflare/AWS):**
+* SSL/TLS termination.
+* WAF inspection and DDoS protection.
+* Routing to the geographically nearest healthy server.
+
+
+* **API Gateway (NGINX/Kong):**
+* **Auth:** Verifies JWT token (decoding and expiration check).
+* **Rate Limit:** Checks Redis-backed counter (e.g., 100 req/hour per user).
+* **Observability:** Injects a Correlation ID and logs the incoming request.
+
+
+
+### 4. Backend Processing (FastAPI)
+
+* **Request Schema:** Pydantic validation of the JSON payload.
+* **Security Pipeline:**
+* Prompt injection detection.
+* PII (Personally Identifiable Information) masking.
+* Safety/Content filtering.
+
+
+* **Semantic Cache:** Checks Redis for a SHA256 hash of the prompt + parameters.
+* *If Hit:* Return cached response immediately.
+* *If Miss:* Proceed to inference.
+
+
+
+### 5. Prompt Engineering & Queue
+
+* **Chat Templating:** Applies the **Llama 3.1** format:
+```text
+<|start_header_id|>system<|end_header_id|>
+You are a helpful assistant.
+<|start_header_id|>user<|end_header_id|>
+Explain quantum computing
+<|start_header_id|>assistant<|end_header_id|>
+
+```
+
+
+* **Context Management:** Injects relevant conversation history for multi-turn dialogue.
+* **Inference Queue:**
+* Adds request to the batch queue (max wait: 50ms).
+* Collects up to 8 requests for optimal GPU throughput.
+
+
+
+### 6. Model Inference (vLLM Engine)
+
+* **KV Cache:** Checks for common prefix matches to skip redundant calculations.
+* **Weight Loading:** Utilizes **4-bit GPTQ** quantized weights for memory efficiency.
+* **Auto-regressive Generation:**
+* Predicts tokens sequentially (~20-50ms per token).
+* Tokens are generated and streamed immediately (e.g., *"Quantum"* → *" computing"* → *" uses"*).
+
+
+
+### 7. Streaming Response & Frontend Update
+
+* **SSE Events:** FastAPI yields data chunks in real-time:
+`data: {"text": "Quantum", "done": false}`
+* **UI Re-rendering:** React receives chunks, appends them to `message.content`, and triggers a re-render.
+* **Visual Effect:** The user sees the text appearing word-by-word (ChatGPT-style).
+
+### 8. Completion & Cleanup
+
+* **Final Event:** `data: {"text": "", "done": true, "tokens": 247}`.
+* **Async Persistence:**
+* Saves the full conversation to **PostgreSQL**.
+* Stores the final response in **Redis** (TTL: 1 hour).
+
+
+* **Telemetry:** Updates **Prometheus** metrics:
+* `request_count++`
+* `tokens_generated += 247`
+* `latency.observe(2.3s)`
+
+
+* **Termination:** SSE connection is closed.
+
+### **Final Result**
+
+**User sees a complete, high-quality response displayed with a smooth, low-latency streaming effect.**
