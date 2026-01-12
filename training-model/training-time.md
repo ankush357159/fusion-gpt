@@ -1,105 +1,84 @@
 ## Training time
 
-Assumptions:
+### Assumptions
 
-- Base model: 7B parameter LLM (e.g., Mistral / LLaMA / Phi-2)
-- Method: **QLoRA / LoRA fine-tuning**
-- Token count: ~180M
-- Colab GPU: **T4 / L4 / A100 (varies by tier)**
+- Model: **GPT-2 (124M parameters)**
+- Data: **100 MB cleaned text**
+- Tokens: ~15–20 million
+- Training type: **Fine-tuning (not from scratch)**
+- Epochs: 1–3
+- GPU: **T4 / L4 / A100**
 
 ### RAM (System Memory)
 
-| Task                              | RAM Needed   |
-| --------------------------------- | ------------ |
-| Dataset loading + preprocessing   | 8–12 GB      |
-| Training (Transformers + PyTorch) | 12–16 GB     |
-| Safe margin                       | **16–24 GB** |
+| Task                           | RAM         |
+| ------------------------------ | ----------- |
+| Dataset loading + tokenization | 4–6 GB      |
+| Training + PyTorch             | 6–8 GB      |
+| Safe margin                    | **8–12 GB** |
 
-### Colab Availability
+### Colab
 
-| Colab Tier | RAM    |
-| ---------- | ------ |
-| Free       | ~12 GB |
-| Pro        | ~25 GB |
-| Pro+       | ~32 GB |
-
-**Recommendation:** Colab **Pro or Pro+** is ideal for stability.
+- Free: ~12 GB → **Sufficient**
+- Pro / Pro+: More than enough
 
 ### GPU VRAM
 
-| Setup              | VRAM     |
-| ------------------ | -------- |
-| 7B + QLoRA (4-bit) | 8–12 GB  |
-| 7B + LoRA (FP16)   | 16–24 GB |
+GPT-2 is small compared to modern LLMs.
+
+| Setup                  | VRAM       |
+| ---------------------- | ---------- |
+| GPT-2 FP16 fine-tuning | **4–6 GB** |
 
 Colab GPUs:
 
-| GPU  | VRAM  |
-| ---- | ----- |
-| T4   | 16 GB |
-| L4   | 24 GB |
-| A100 | 40 GB |
+- T4 (16 GB) → ✔
+- L4 (24 GB) → ✔
+- A100 (40 GB) → ✔
 
-**QLoRA is strongly recommended** for Colab.
+### Training Time for 100 MB
 
-### Training Time (1 GB of C4)
+| GPU  | Time (1–3 epochs) |
+| ---- | ----------------- |
+| T4   | 1–2 hours         |
+| L4   | 45–90 minutes     |
+| A100 | 30–60 minutes     |
 
-| GPU  | Estimated Time |
-| ---- | -------------- |
-| T4   | 12–20 hours    |
-| L4   | 8–12 hours     |
-| A100 | 4–6 hours      |
-
-This assumes:
-
-- Batch size: 1–2
-- Gradient accumulation
-- 1–2 epochs
+Tokenization adds ~10–15 minutes.
 
 ### Disk Space
 
-| Item             | Space   |
-| ---------------- | ------- |
-| C4 subset (1 GB) | 1 GB    |
-| Base model       | 8–15 GB |
-| Checkpoints      | 5–10 GB |
+| Item        | Size    |
+| ----------- | ------- |
+| Dataset     | 100 MB  |
+| GPT-2 model | ~500 MB |
+| Checkpoints | ~1–2 GB |
 
-**Total:** ~20–25 GB
+Total: **~3 GB**
 
-Colab provides ~100 GB, so space is not an issue.
-
-### Reality Check for Colab
-
-| Constraint            | Impact                       |
-| --------------------- | ---------------------------- |
-| 12-hour session limit | Training may get interrupted |
-| GPU availability      | A100 not guaranteed          |
-| Idle timeout          | Long runs need activity      |
-
-**Best practice:** Save checkpoints to Google Drive every 30–60 minutes.
+Colab provides ~100 GB.
 
 ### Summary
 
-| Resource | Required | Colab Pro          |
-| -------- | -------- | ------------------ |
-| RAM      | 16–24 GB | ✔                  |
-| VRAM     | 8–12 GB  | ✔                  |
-| Disk     | 25 GB    | ✔                  |
-| Time     | 8–20 hrs | ⚠ (session limits) |
+| Resource | Required | Colab |
+| -------- | -------- | ----- |
+| RAM      | 8–12 GB  | ✔     |
+| VRAM     | 4–6 GB   | ✔     |
+| Disk     | 3 GB     | ✔     |
+| Time     | 1–2 hrs  | ✔     |
 
-### Strong Recommendation
+### Practical Notes
 
-For 1 GB of C4:
+- GPT-2 uses **BPE tokenizer** (tiktoken-compatible)
+- 100 MB is enough for **style/domain adaptation**
+- Overfitting risk increases beyond 3 epochs
+- Checkpointing every 30 minutes is sufficient
 
-- Use **QLoRA**
-- Train for **1 epoch**
-- Save checkpoints frequently
-- Prefer **Colab Pro+** or split training across sessions
+### Final Recommendation
 
-If needed, step-by-step setup can be provided for:
+For this setup:
 
-- Loading a 1 GB C4 subset
-- Tokenization
-- QLoRA config for Colab
-- Checkpoint recovery
-- Cost-optimized cloud alternatives
+- Colab Free is enough
+- 1–2 epochs recommended
+- Batch size: 4–8
+- Sequence length: 512–1024
