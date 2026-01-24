@@ -1,0 +1,12 @@
+# Holds experiment configs instead of hardcoding values.
+model:
+  vocab_size: 100277
+  embed_dim: 256
+  num_heads: 8
+  num_layers: 6
+  block_size: 128
+
+training:
+  batch_size: 32
+  epochs: 10
+  lr: 3e-4
