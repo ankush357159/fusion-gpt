@@ -9,18 +9,12 @@ class PicoGPT(nn.Module):
         super().__init__()
         self.config = config
 
-        self.embeddings = GPTEmbeddings(
-            config.vocab_size,
-            config.embed_dim,
-            config.block_size,
-        )
-
+        self.embeddings = GPTEmbeddings(config)
         self.blocks = nn.Sequential(
             *[TransformerBlock(config) for _ in range(config.num_layers)]
         )
-
         self.ln_f = nn.LayerNorm(config.embed_dim)
-        self.head = nn.Linear(config.embed_dim, config.vocab_size)
+        self.head = nn.Linear(config.embed_dim, config.vocab_size, bias=False)
 
     def forward(self, idx, targets=None):
         x = self.embeddings(idx)
@@ -30,9 +24,6 @@ class PicoGPT(nn.Module):
 
         loss = None
         if targets is not None:
-            loss = F.cross_entropy(
-                logits.view(-1, logits.size(-1)),
-                targets.view(-1),
-            )
+            loss = F.cross_entropy(logits.view(-1, logits.size(-1)), targets.view(-1))
 
         return logits, loss
