@@ -19,6 +19,7 @@ urls = {
     "time_machine": "https://www.gutenberg.org/cache/epub/35/pg35.txt",
 }
 
+
 def _build_session():
     session = requests.Session()
     retries = Retry(
@@ -104,15 +105,4 @@ def combine_books():
     print("Dataset ready!")
     print(f"Saved to: {output_path}")
     print(f"Total characters: {len(combined_text):,}")
-    print(
-        f"Approx size: {len(combined_text.encode('utf-8'))/1024/1024:.2f} MB"
-    )
-
-
-def main():
-    download_books()
-    combine_books()
-
-
-if __name__ == "__main__":
-    main()
+    print(f"Approx size: {len(combined_text.encode('utf-8'))/1024/1024:.2f} MB")
