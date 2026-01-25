@@ -373,7 +373,3 @@ def main():
                     f"{basic['type_token_ratio']:<6.3f} "
                     f"{basic['avg_sentence_length']:<8.1f}"
                 )
-
-
-if __name__ == "__main__":
-    main()
