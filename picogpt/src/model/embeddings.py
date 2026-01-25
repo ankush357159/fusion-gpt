@@ -6,6 +6,7 @@ class GPTEmbeddings(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.token_emb = nn.Embedding(config.vocab_size, config.embed_dim)
+        self.dropout = nn.Dropout(config.dropout)
 
         self.use_rope = config.use_rope
         if not self.use_rope:
@@ -16,9 +17,9 @@ class GPTEmbeddings(nn.Module):
         tok = self.token_emb(idx)
 
         if self.use_rope:
-            return tok
+            return self.dropout(tok)
 
         B, T = idx.shape
         pos = torch.arange(0, T, device=idx.device)
         pos = self.pos_emb(pos)[None, :, :]
-        return tok + pos
+        return self.dropout(tok + pos)
