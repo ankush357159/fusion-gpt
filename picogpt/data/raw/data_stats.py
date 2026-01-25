@@ -77,9 +77,9 @@ class TextStats:
         """Get character frequency distribution."""
         char_counts = Counter(self.text.lower())
         # Filter out whitespace and newlines for cleaner display
-        char_counts = {
-            k: v for k, v in char_counts.items() if k not in [" ", "\n", "\t", "\r"]
-        }
+        char_counts = Counter(
+            {k: v for k, v in char_counts.items() if k not in [" ", "\n", "\t", "\r"]}
+        )
         return dict(char_counts.most_common(50))
 
     def word_frequency(self, top_n: int = 50) -> Dict[str, int]:
