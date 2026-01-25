@@ -22,7 +22,6 @@ __pycache__/
 
 # Libraries & Data
 .ipynb_checkpoints/
-data/
 outputs/
 models/*.pt
 models/*.pth
