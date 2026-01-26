@@ -3,10 +3,21 @@ import math
 
 import torch
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 from configs.GPTConfig import GPTConfig
 from src.model.pico_gpt import PicoGPT
 from src.training.dataset import load_and_split_datasets
+
+# builds a PicoGPT model, then calls model(x, y) each step.
+# Inside PicoGPT.forward() in pico_gpt.py, the flow is:
+
+# GPTEmbeddings turns token IDs into vectors (plus positions if RoPE is off).
+# TransformerBlock stack runs on those vectors. Each block uses:
+    # MultiHeadSelfAttention (masked attention over sequence),
+    # FeedForward (MLP),
+    # residual connections + LayerNorm.
+# Final LayerNorm and linear head produce logits, and loss is computed against y.
 
 
 def parse_args():
@@ -81,7 +92,12 @@ def main():
         model.train()
         total_loss = 0
 
-        for x, y in train_loader:
+        train_pbar = tqdm(
+            train_loader,
+            desc=f"Epoch {epoch+1}/{args.epochs} [train]",
+            leave=False,
+        )
+        for x, y in train_pbar:
             x, y = x.to(device), y.to(device)
 
             _, loss = model(x, y)
@@ -95,16 +111,23 @@ def main():
             global_step += 1
 
             total_loss += loss.item()
+            train_pbar.set_postfix(loss=f"{loss.item():.4f}")
 
         train_loss = total_loss / len(train_loader)
 
         model.eval()
         val_loss = 0
         with torch.no_grad():
-            for x, y in val_loader:
+            val_pbar = tqdm(
+                val_loader,
+                desc=f"Epoch {epoch+1}/{args.epochs} [val]",
+                leave=False,
+            )
+            for x, y in val_pbar:
                 x, y = x.to(device), y.to(device)
                 _, loss = model(x, y)
                 val_loss += loss.item()
+                val_pbar.set_postfix(loss=f"{loss.item():.4f}")
 
         val_loss = val_loss / len(val_loader)
         print(
