@@ -106,5 +106,3 @@ def combine_books():
     print(f"Saved to: {output_path}")
     print(f"Total characters: {len(combined_text):,}")
     print(f"Approx size: {len(combined_text.encode('utf-8'))/1024/1024:.2f} MB")
-    
-    return combined_text
