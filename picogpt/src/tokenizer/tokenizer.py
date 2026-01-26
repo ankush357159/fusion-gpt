@@ -1,3 +1,6 @@
+from pathlib import Path
+
+import numpy as np
 import tiktoken
 
 
@@ -56,3 +59,24 @@ class TiktokenTokenizer:
         if len(tokens) >= max_length:
             return tokens[:max_length]
         return tokens + [self.pad_token_id] * (max_length - len(tokens))
+
+    def encode_to_npy(
+        self,
+        text,
+        output_path,
+        add_bos=False,
+        add_eos=False,
+        allowed_special={"<|endoftext|>"},
+        disallowed_special=(),
+    ):
+        tokens = self.encode(
+            text,
+            add_bos=add_bos,
+            add_eos=add_eos,
+            allowed_special=allowed_special,
+            disallowed_special=disallowed_special,
+        )
+        path = Path(output_path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        np.save(path, np.asarray(tokens, dtype=np.int64))
+        return path
