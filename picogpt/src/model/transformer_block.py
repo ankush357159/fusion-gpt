@@ -1,4 +1,4 @@
-from .attention import MultiHeadSelfAttention
+from .multi_head_self_attention import MultiHeadSelfAttention
 from .feed_forward import FeedForward
 import torch.nn as nn
 

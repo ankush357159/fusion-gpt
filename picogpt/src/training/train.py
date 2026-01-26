@@ -4,20 +4,20 @@ import math
 import torch
 from torch.utils.data import DataLoader
 
-from src.model.model import GPTConfig
+from configs.GPTConfig import GPTConfig
 from src.model.pico_gpt import PicoGPT
-from src.tokenizer.tokenizer import TiktokenTokenizer
-from data.raw import TextDataset
+from src.training.dataset import load_and_split_datasets
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data_path", type=str, required=True)
+    parser.add_argument("--tokens_path", type=str, required=True)
     parser.add_argument("--epochs", type=int, default=10)
     parser.add_argument("--batch_size", type=int, default=32)
     parser.add_argument("--block_size", type=int, default=128)
     parser.add_argument("--lr", type=float, default=3e-4)
-    parser.add_argument("--val_split", type=float, default=0.1)
+    parser.add_argument("--train_split", type=float, default=0.9)
+    parser.add_argument("--val_split", type=float, default=0.05)
     parser.add_argument("--weight_decay", type=float, default=0.1)
     parser.add_argument("--grad_clip", type=float, default=1.0)
     parser.add_argument("--warmup_steps", type=int, default=100)
@@ -30,36 +30,27 @@ def main():
 
     print("Training PicoGPT from scratch")
 
-    tokenizer = TiktokenTokenizer()
+    train_dataset, val_dataset, test_dataset = load_and_split_datasets(
+        tokens_path=args.tokens_path,
+        block_size=args.block_size,
+        train_ratio=args.train_split,
+        val_ratio=args.val_split,
+    )
 
-    with open(args.data_path, "r", encoding="utf-8") as f:
-        text = f.read()
-
-    tokens = tokenizer.encode(text)
-
-    if not (0.0 < args.val_split < 1.0):
-        raise ValueError("val_split must be between 0 and 1")
-
-    split_idx = int(len(tokens) * (1.0 - args.val_split))
-    train_tokens = tokens[:split_idx]
-    val_tokens = tokens[split_idx:]
-
-    if len(val_tokens) <= args.block_size:
-        raise ValueError("Validation set is too small for the given block_size")
-
-    train_dataset = TextDataset(train_tokens, args.block_size)
-    val_dataset = TextDataset(val_tokens, args.block_size)
-
-    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
+    train_loader = DataLoader(
+        train_dataset, batch_size=args.batch_size, shuffle=True, drop_last=True
+    )
+    val_loader = DataLoader(
+        val_dataset, batch_size=args.batch_size, shuffle=False, drop_last=True
+    )
 
     config = GPTConfig(
-        vocab_size=tokenizer.vocab_size,
+        vocab_size=50257,
         block_size=args.block_size,
         embed_dim=256,
         num_heads=8,
         num_layers=6,
-        use_rope=True,
+        use_rope=False,
         gpt2_compatible=False,
     )
 

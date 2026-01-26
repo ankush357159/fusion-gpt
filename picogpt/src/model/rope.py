@@ -1,5 +1,6 @@
 import torch
 
+# This function is not used in PicoGPT as rope was not a part of GPT-2
 
 def rotate_half(x):
     x1 = x[..., : x.shape[-1] // 2]
