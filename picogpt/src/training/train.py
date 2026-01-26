@@ -3,7 +3,7 @@ import math
 
 import torch
 from torch.utils.data import DataLoader
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 from configs.GPTConfig import GPTConfig
 from src.model.pico_gpt import PicoGPT
@@ -95,7 +95,7 @@ def main():
         train_pbar = tqdm(
             train_loader,
             desc=f"Epoch {epoch+1}/{args.epochs} [train]",
-            leave=False,
+            leave=True,
         )
         for x, y in train_pbar:
             x, y = x.to(device), y.to(device)
@@ -121,7 +121,7 @@ def main():
             val_pbar = tqdm(
                 val_loader,
                 desc=f"Epoch {epoch+1}/{args.epochs} [val]",
-                leave=False,
+                leave=True,
             )
             for x, y in val_pbar:
                 x, y = x.to(device), y.to(device)
