@@ -11,16 +11,16 @@ RAW_DIR.mkdir(parents=True, exist_ok=True)
 # -----------------------------
 # Book sources
 # -----------------------------
-urls = {
-    "gatsby": "https://www.gutenberg.org/cache/epub/64317/pg64317.txt",
-}
 # urls = {
 #     "gatsby": "https://www.gutenberg.org/cache/epub/64317/pg64317.txt",
-#     "pride_prejudice": "https://www.gutenberg.org/cache/epub/1342/pg1342.txt",
-#     "sherlock_holmes": "https://www.gutenberg.org/cache/epub/1661/pg1661.txt",
-#     "alice": "https://www.gutenberg.org/cache/epub/11/pg11.txt",
-#     "time_machine": "https://www.gutenberg.org/cache/epub/35/pg35.txt",
 # }
+urls = {
+    "gatsby": "https://www.gutenberg.org/cache/epub/64317/pg64317.txt",
+    "pride_prejudice": "https://www.gutenberg.org/cache/epub/1342/pg1342.txt",
+    "sherlock_holmes": "https://www.gutenberg.org/cache/epub/1661/pg1661.txt",
+    "alice": "https://www.gutenberg.org/cache/epub/11/pg11.txt",
+    "time_machine": "https://www.gutenberg.org/cache/epub/35/pg35.txt",
+}
 
 
 def _build_session():
