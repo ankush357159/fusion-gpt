@@ -132,3 +132,14 @@ Position 2 → predict t3
 Position 3 → predict t4
 Position 4 → predict t5
 ```
+
+### Factors that determine parameter count:
+
+1. vocab_size (token embedding + output head if untied)
+2. embed_dim (width of the model)
+3. num_layers (depth)
+4. num_heads (affects Q/K/V projection sizes)
+5. MLP/FFN size (often 4× embed_dim)
+6. Positional embeddings (if used)
+7. Bias terms and LayerNorm params
+8. Whether input/output embeddings are tied
