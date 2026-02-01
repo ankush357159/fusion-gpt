@@ -28,6 +28,7 @@ models/*.pth
 
 # Environment & Config
 .env
+.env.local
 .yaml_cache
 pyyaml_settings.local.yaml
 
