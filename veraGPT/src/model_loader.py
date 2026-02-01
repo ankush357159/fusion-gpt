@@ -131,7 +131,7 @@ class ModelLoader:
         dtype = self.device_mgr.get_torch_dtype(self.cfg.model.torch_dtype)
 
         kwargs: dict = {
-            "torch_dtype": dtype,
+            "dtype": dtype,
             "trust_remote_code": False,
         }
 

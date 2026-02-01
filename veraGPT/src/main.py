@@ -128,6 +128,10 @@ def build_argparser() -> argparse.ArgumentParser:
         "--prompt", type=str, default=None,
         help="If provided, run a single prompt and exit (non-interactive).",
     )
+    p.add_argument(
+        "--timing", action="store_true",
+        help="Print response timing metrics (tokens/sec, latency).",
+    )
 
     # ── Logging ──────────────────────────────────────────────────
     p.add_argument(
@@ -191,7 +195,7 @@ def args_to_config(args: argparse.Namespace) -> Config:
     return cfg
 
 
-def run_single_prompt(cfg: Config, prompt: str, system_prompt: str | None) -> None:
+def run_single_prompt(cfg: Config, prompt: str, system_prompt: str | None, show_timing: bool = False) -> None:
     """Non-interactive: load model, generate one response, print, exit."""
     setup_logging(cfg.logging)
 
@@ -208,8 +212,22 @@ def run_single_prompt(cfg: Config, prompt: str, system_prompt: str | None) -> No
     )
 
     messages = [{"role": "user", "content": prompt}]
-    response = engine.generate(messages)
-    print(response)
+    
+    if show_timing:
+        response, stats = engine.generate(messages, return_stats=True)
+        print(response)
+        print(
+            f"\n{'='*60}\n"
+            f"TIMING STATS\n"
+            f"{'='*60}\n"
+            f"New tokens: {stats['new_tokens']}\n"
+            f"Elapsed: {stats['elapsed_s']:.2f} s\n"
+            f"Speed: {stats['tokens_per_s']:.2f} tok/s\n"
+            f"{'='*60}"
+        )
+    else:
+        response = engine.generate(messages)
+        print(response)
 
 
 def main() -> None:
@@ -219,7 +237,7 @@ def main() -> None:
 
     # ── Non-interactive single-prompt mode ───────────────────────
     if args.prompt:
-        run_single_prompt(cfg, args.prompt, args.system)
+        run_single_prompt(cfg, args.prompt, args.system, show_timing=args.timing)
         return
 
     # ── Interactive chatbot loop ─────────────────────────────────

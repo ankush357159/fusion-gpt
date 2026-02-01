@@ -46,8 +46,8 @@ class InferenceEngine:
         )
 
     # ── blocking generation ──────────────────────────────────────
-    @torch.no_grad()
-    def generate(self, messages: List[dict]) -> str:
+    @torch.inference_mode()
+    def generate(self, messages: List[dict], return_stats: bool = False):
         """
         Full-response generation.
 
@@ -55,20 +55,27 @@ class InferenceEngine:
         ----------
         messages : list[dict]
             Chat history as [{"role": ..., "content": ...}, …].
+        return_stats : bool
+            If True, returns (response, stats_dict) instead of just response.
 
         Returns
         -------
-        str
+        str or tuple
             The model's reply (assistant turn only, no prompt echo).
+            If return_stats=True, returns (response, {"new_tokens", "elapsed_s", "tokens_per_s"}).
         """
         prompt = self.formatter.format(messages)
-        input_ids = self._tokenize(prompt)
+        input_ids, attention_mask = self._tokenize(prompt)
 
         gen_cfg = self._build_generation_config()
 
         t0 = time.time()
         with torch.no_grad():
-            output_ids = self.model.generate(input_ids, **gen_cfg)
+            output_ids = self.model.generate(
+                input_ids,
+                attention_mask=attention_mask,
+                **gen_cfg,
+            )
         elapsed = time.time() - t0
 
         # Slice off the echoed prompt tokens
@@ -81,6 +88,15 @@ class InferenceEngine:
             elapsed,
             len(new_tokens) / elapsed if elapsed > 0 else 0,
         )
+        
+        if return_stats:
+            stats = {
+                "new_tokens": len(new_tokens),
+                "elapsed_s": elapsed,
+                "tokens_per_s": (len(new_tokens) / elapsed) if elapsed > 0 else 0,
+            }
+            return response.strip(), stats
+
         return response.strip()
 
     # ── streaming generation ─────────────────────────────────────
@@ -136,14 +152,17 @@ class InferenceEngine:
                 break
 
     # ── private helpers ──────────────────────────────────────────
-    def _tokenize(self, text: str) -> torch.Tensor:
-        """Encode text to input_ids on the correct device."""
+    def _tokenize(self, text: str) -> tuple[torch.Tensor, torch.Tensor]:
+        """Encode text to input_ids + attention_mask on the correct device."""
         inputs = self.tokeniser(
             text,
             return_tensors="pt",
             add_special_tokens=False,  # We already include <s> in the template
         )
-        return inputs["input_ids"].to(self.device_mgr.device)
+        return (
+            inputs["input_ids"].to(self.device_mgr.device),
+            inputs["attention_mask"].to(self.device_mgr.device),
+        )
 
     def _build_generation_config(self) -> dict:
         """Map our GenerationConfig dataclass to HF generate() kwargs."""
@@ -156,6 +175,7 @@ class InferenceEngine:
             "pad_token_id": self.tokeniser.pad_token_id,
             "eos_token_id": self.tokeniser.eos_token_id,
             "repetition_penalty": gen.repetition_penalty,
+            "use_cache": True,
         }
 
         if not greedy:
