@@ -35,14 +35,14 @@ from device_manager import DeviceManager
 
 def build_argparser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
-        description="Interactive chatbot using Mistral-7B-Instruct-v0.2",
+        description="Interactive chatbot with multiple model presets (TinyLlama, Phi-2, Phi-3, Mistral-7B, Llama-2-13B)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
 
     # ── Model ────────────────────────────────────────────────────
     p.add_argument(
         "--model", default=None,
-        help="HuggingFace model id or local path (overrides config default).",
+        help="Model preset ('tiny', 'phi2', 'phi3', 'mistral', 'llama13') or full HF model id (default: tiny).",
     )
     p.add_argument(
         "--local-path", default=None,
@@ -147,9 +147,17 @@ def args_to_config(args: argparse.Namespace) -> Config:
     """Merge CLI arguments into a Config dataclass."""
     cfg = Config.from_env()  # start with env-var overrides
 
-    # Model
+    # Model - check if it's a preset name or full model path
     if args.model:
-        cfg.model.model_name_or_path = args.model
+        # Check if it's a preset (tiny, phi2, phi3, mistral, llama13)
+        from model_presets import PRESETS
+        if args.model.lower() in PRESETS:
+            # Load from preset, preserving any quantization settings from args
+            enable_quant = cfg.quantization.enabled or (args.quant is not None)
+            cfg = Config.from_preset(args.model.lower(), enable_quantization=enable_quant)
+        else:
+            # Treat as full HuggingFace model ID or path
+            cfg.model.model_name_or_path = args.model
     if args.local_path:
         cfg.model.local_model_path = args.local_path
 

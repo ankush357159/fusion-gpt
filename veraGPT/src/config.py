@@ -15,10 +15,14 @@ from typing import Optional
 @dataclass
 class ModelConfig:
     """Pretrained model & tokeniser path / hub id."""
-    model_name_or_path: str = "mistralai/Mistral-7B-Instruct-v0.2"
+    # Default to TinyLlama (fastest, works on CPU, beginner-friendly)
+    # Use Config.from_preset() for other models: 'tiny', 'phi2', 'phi3', 'mistral', 'llama13'
+    model_name_or_path: str = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
     # Set to a local directory to load from disk instead of HF Hub
     local_model_path: Optional[str] = None
     torch_dtype: str = "auto"  # "auto" | "float16" | "bfloat16" | "float32"
+    # Model preset name (if using presets: 'tiny', 'phi2', 'phi3', 'mistral', 'llama13')
+    preset: Optional[str] = "tiny"  # Default preset
 
 
 @dataclass
@@ -92,6 +96,7 @@ class Config:
         Override defaults from environment variables.
         Supported env vars (all optional):
             LLM_MODEL_PATH          - HF hub id or local path
+            LLM_MODEL_PRESET        - 'tiny', 'phi2', 'phi3', 'mistral', 'llama13'
             LLM_MAX_NEW_TOKENS      - int
             LLM_TEMPERATURE         - float
             LLM_QUANT_ENABLED       - "1" to enable 4/8-bit quantization
@@ -106,6 +111,20 @@ class Config:
             LLM_LOG_LEVEL           - DEBUG | INFO | WARNING | ERROR
         """
         cfg = cls()
+
+        # Model preset takes precedence
+        model_preset = os.getenv("LLM_MODEL_PRESET")
+        if model_preset:
+            try:
+                from model_presets import get_preset
+                preset = get_preset(model_preset)
+                cfg.model.model_name_or_path = preset.model_id
+                cfg.model.preset = model_preset
+                if preset.quantization_recommended:
+                    cfg.quantization.enabled = True
+                    cfg.quantization.load_in_bits = 4
+            except (ImportError, ValueError) as e:
+                print(f"Warning: Could not load preset '{model_preset}': {e}")
 
         model_path = os.getenv("LLM_MODEL_PATH")
         if model_path:
@@ -166,4 +185,35 @@ class Config:
         if log_level:
             cfg.logging.log_level = log_level.upper()
 
+        return cfg
+
+    @classmethod
+    def from_preset(cls, preset_name: str, enable_quantization: bool = None) -> "Config":
+        """
+        Create config from a model preset.
+        
+        Args:
+            preset_name: One of 'tiny', 'phi2', 'phi3', 'mistral', 'llama13'
+            enable_quantization: Override quantization setting (None = use preset default)
+        
+        Returns:
+            Config object configured for the preset
+        """
+        from model_presets import get_preset
+        
+        cfg = cls()
+        preset = get_preset(preset_name)
+        
+        cfg.model.model_name_or_path = preset.model_id
+        cfg.model.preset = preset_name
+        
+        # Apply recommended quantization unless overridden
+        if enable_quantization is not None:
+            cfg.quantization.enabled = enable_quantization
+        else:
+            cfg.quantization.enabled = preset.quantization_recommended
+        
+        if cfg.quantization.enabled:
+            cfg.quantization.load_in_bits = 4
+        
         return cfg
